@@ -1,0 +1,17 @@
+manifestVersion: 1
+id: notrin-litecoin
+name: Litecoin Node
+tagline: Zoptymalizowany węzeł Litecoin
+category: bitcoin
+version: "0.21.4"
+port: 8080
+description: Węzeł Litecoin z genetycznymi modyfikacjami Matrix.
+developer: NotRin
+website: https://github.com/NotRin7
+dependencies: []
+repo: https://github.com/Marcin1986-sys/umbrel-community-app-store
+support: https://github.com/Marcin1986-sys/umbrel-community-app-store
+gallery: []
+icon: https://raw.githubusercontent.com/Marcin1986-sys/umbrel-community-app-store/main/notrin-litecoin/icon.png
+path: ""
+defaultPassword: ""
