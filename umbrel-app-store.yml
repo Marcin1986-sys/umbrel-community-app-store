@@ -1,0 +1,5 @@
+id: community-store
+name: "Marcin1986-sys"
+apps:
+  - notrin-litecoin
+  - notrin-litecoin-electrumx
