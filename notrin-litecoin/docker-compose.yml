@@ -10,3 +10,23 @@ services:
     image: nginx:alpine
     container_name: litecoin_node_dashboard
     restart: always
+
+  node:
+    image: ghcr.io/marcin1986-sys/litecoin-izotop:latest
+    container_name: notrin-litecoin
+    restart: always
+    ports:
+      - "9332:9332"
+      - "9333:9333"
+    command: 
+      - litecoind
+      - -printtoconsole
+      - -server=1
+      - -rpcuser=admin
+      - -rpcpassword=admin!123
+      - -rpcallowip=0.0.0.0/0
+      - -rpcbind=0.0.0.0
+      - -txindex=1
+      - -blockfilterindex=1
+    volumes:
+      - ${APP_DATA_DIR}/data:/home/litecoin/.litecoin
