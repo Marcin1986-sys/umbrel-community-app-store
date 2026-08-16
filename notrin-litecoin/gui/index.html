@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Litecoin Node Dashboard</title>
-    <link rel="icon" href="https://raw.githubusercontent.com/litecoin-foundation/umbrel-docker-scripts/main/images/litecoin_logo.jpg">
+    <!-- Lokalny lub bezpieczny CDN dla Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             margin: 0;
@@ -34,13 +35,6 @@
             display: flex;
             align-items: center;
             gap: 15px;
-        }
-        .header .title img {
-            width: 64px;
-            height: 64px;
-            border-radius: 12px;
-            background-color: #345d9d;
-            padding: 10px;
         }
         .header .title h1 {
             margin: 0;
@@ -115,35 +109,31 @@
         }
         .progress-bar {
             height: 100%;
-            width: 100%;
+            width: 0%;
             background-color: #3949ab;
             border-radius: 10px;
+            transition: width 0.5s ease;
         }
         .chart-card {
             background: #1e1e1e;
             padding: 20px;
             border-radius: 16px;
-            box-shadow: 0 0 0 rgba(0, 0, 0, 0.2);
-            flex: 1;
-            min-width: 280px;
+            margin-top: 20px;
             display: flex;
             flex-direction: column;
-            justify-content: center;
         }
         canvas {
             max-width: 100%;
         }
     </style>
-    <script src="https://raw.githubusercontent.com/litecoin-foundation/umbrel-docker-scripts/main/images/chart.js"></script>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <div class="title">
-                <img src="https://raw.githubusercontent.com/litecoin-foundation/umbrel-docker-scripts/main/images/litecoin_logo.jpg" alt="Litecoin Logo">
                 <div>
                     <h1>Litecoin Node</h1>
-                    <p>Litecoin Core 0.21.2</p>
+                    <p>Litecoin Core (Matrix v30.2.1)</p>
                 </div>
             </div>
             <div class="status">
@@ -178,7 +168,7 @@
                         <strong id="hashrate">Loading...</strong>
                     </div>
                     <div class="stat">
-                        <p>Blockchain Size</p>
+                        <p>Chain Size</p>
                         <strong id="blockchain-size">Loading...</strong>
                     </div>
                 </div>
@@ -194,52 +184,61 @@
         const API_BASE_URL = "http://{{API_IP}}:5000";
 
         async function fetchAPI(endpoint) {
-            const response = await fetch(`${API_BASE_URL}/${endpoint}`);
-            return response.json();
+            try {
+                const response = await fetch(`${API_BASE_URL}/${endpoint}`);
+                return await response.json();
+            } catch (e) {
+                console.error("API Error:", e);
+                return null;
+            }
         }
 
         async function updateSyncProgress() {
             const progress = await fetchAPI('getsyncprogress');
-            document.getElementById('sync-progress').innerText = `${progress}%`;
-            document.getElementById('sync-bar').style.width = `${progress}%`;
+            if (progress !== null) {
+                document.getElementById('sync-progress').innerText = `${progress}%`;
+                document.getElementById('sync-bar').style.width = `${progress}%`;
+            }
         }
 
         async function updateNetworkInfo() {
             const connections = await fetchAPI('getconnectioncount');
-            document.getElementById('connections').innerText = `${connections} Peers`;
+            if (connections !== null) document.getElementById('connections').innerText = `${connections} Peers`;
 
             const mempool = await fetchAPI('getmempoolinfo');
-            document.getElementById('mempool').innerText = `${mempool} KB`;
+            if (mempool !== null) document.getElementById('mempool').innerText = `${mempool} KB`;
 
             const hashrate = await fetchAPI('getnetworkhashps');
-            document.getElementById('hashrate').innerText = hashrate >= 1000 ? `${(hashrate / 1000).toFixed(2)} PH/s` : `${hashrate} TH/s`;
+            if (hashrate !== null) document.getElementById('hashrate').innerText = hashrate >= 1000 ? `${(hashrate / 1000).toFixed(2)} PH/s` : `${hashrate} TH/s`;
 
             const blockchainSize = await fetchAPI('getblockchaininfo');
-            document.getElementById('blockchain-size').innerText = `${blockchainSize} GB`;
+            if (blockchainSize !== null) document.getElementById('blockchain-size').innerText = `${blockchainSize} GB`;
         }
 
         async function updateBlockList() {
             const blockList = document.getElementById('block-list');
             blockList.innerHTML = '';
-
             const blockHeight = await fetchAPI('getblockheight');
+            if (blockHeight === null) return;
+
             for (let i = 0; i < 10; i++) {
                 const blockNumber = blockHeight - i;
                 const transactionCount = await fetchAPI(`getblocktransactions/${blockNumber}`);
                 const listItem = document.createElement('li');
-                listItem.innerHTML = `<span>Block <b>${blockNumber.toLocaleString()}</b></span><span><b>${transactionCount.toLocaleString()}</b> transactions</span>`;
+                listItem.innerHTML = `<span>Block <b>${blockNumber.toLocaleString()}</b></span><span><b>${(transactionCount || 0).toLocaleString()}</b> tx</span>`;
                 blockList.appendChild(listItem);
             }
         }
 
         async function renderTransactionChart() {
             const blockHeight = await fetchAPI('getblockheight');
+            if (blockHeight === null) return;
             const transactionData = [];
             const blockLabels = [];
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 30; i++) {
                 const blockNumber = blockHeight - i;
                 const transactionCount = await fetchAPI(`getblocktransactions/${blockNumber}`);
-                transactionData.push(transactionCount);
+                transactionData.push(transactionCount || 0);
                 blockLabels.push(`Block ${blockNumber}`);
             }
 
@@ -247,44 +246,19 @@
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: blockLabels,
+                    labels: blockLabels.reverse(),
                     datasets: [{
                         label: 'Transactions per Block',
-                        data: transactionData,
+                        data: transactionData.reverse(),
                         borderColor: '#3949ab',
                         backgroundColor: 'rgba(57, 73, 171, 0.2)',
-                        fill: true,
                         tension: 0.4,
-                        pointRadius: 0,
-                        pointHoverRadius: 5,
-                        pointHoverBackgroundColor: '#3949ab',
-                        pointHoverBorderWidth: 2,
-                        pointHoverBorderColor: '#fff',
+                        fill: true
                     }]
                 },
                 options: {
-                    scales: {
-                        y: { display: false },
-                        x: { display: false }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const blockNumber = blockLabels[context.dataIndex];
-                                    return ` ${context.raw} transactions`;
-                                }
-                            }
-                        }
-                    },
-                    elements: {
-                        line: { tension: 0.4 }
-                    },
-                    layout: {
-                        padding: { top: 0, left: 0, right: 0, bottom: 0 }
-                    },
-                    hover: { mode: 'nearest', intersect: false }
+                    scales: { y: { display: false }, x: { display: false } },
+                    plugins: { legend: { display: false } }
                 }
             });
         }
@@ -297,12 +271,7 @@
         }
 
         init();
-
-        setInterval(() => {
-            updateSyncProgress();
-            updateNetworkInfo();
-            updateBlockList();
-        }, 60000);
+        setInterval(init, 60000);
     </script>
 </body>
 </html>
