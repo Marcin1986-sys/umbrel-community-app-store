@@ -28,3 +28,34 @@ dependencies: []
 path: ""
 defaultUsername: "testuser"
 defaultPassword: "testpass"
+# ... (pozostała część Twojego pliku umbrel-app.yml)
+defaultUsername: "testuser"
+defaultPassword: "testpass"
+
+config:
+  - id: LITECOIN_RPC_PORT
+    name: "RPC Port"
+    description: "Port for RPC communication"
+    type: "number"
+    default: 9332
+  - id: LITECOIN_P2P_PORT
+    name: "P2P Port"
+    description: "Port for P2P network"
+    type: "number"
+    default: 9333
+  - id: LITECOIN_RPC_USER
+    name: "RPC User"
+    type: "text"
+    default: "testuser"
+  - id: LITECOIN_RPC_PASS
+    name: "RPC Password"
+    type: "text"
+    default: "testpass"
+  - id: LITECOIN_NODE_IP
+    name: "Node IP"
+    type: "text"
+    default: "127.0.0.1"
+  - id: LITECOIN_LOCALHOST_IP
+    name: "Localhost IP"
+    type: "text"
+    default: "127.0.0.1"
